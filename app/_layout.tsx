@@ -87,7 +87,7 @@ const SecurityPatrolApp: React.FC = () => {
         // Request location permissions
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert('Permission denied', 'Location permission is required for this app');
+          Alert.alert('Permissão negada', 'A permissão de localização é necessária para este aplicativo');
           return;
         }
 
@@ -109,7 +109,7 @@ const SecurityPatrolApp: React.FC = () => {
         );
       } catch (error) {
         console.error('Error setting up permissions and location:', error);
-        Alert.alert('Error', 'Failed to initialize location services');
+        Alert.alert('Erro', 'Falha ao inicializar os serviços de localização');
       }
     };
 
@@ -120,33 +120,33 @@ const SecurityPatrolApp: React.FC = () => {
   useEffect(() => {
     // Initialize with sample guards and checkpoints
     const sampleGuards: Guard[] = [
-      { id: '1', name: 'John Smith', isActive: false },
-      { id: '2', name: 'Maria Garcia', isActive: false },
+      { id: '1', name: 'João, o Guarda', isActive: false },
+      { id: '2', name: 'Maria Maroa ', isActive: false },
     ];
 
     const sampleCheckpoints: Checkpoint[] = [
       {
         id: '1',
-        name: 'Main Entrance',
+        name: 'Entrada Principal',
         latitude: -3.7319,
         longitude: -38.5267,
-        description: 'Check main entrance security',
+        description: 'Verifique a entrada principal',
         order: 1,
       },
       {
         id: '2',
-        name: 'Parking Lot',
+        name: 'Estacionamento',
         latitude: -3.7320,
         longitude: -38.5268,
-        description: 'Patrol parking area',
+        description: 'Patrulhe a área do estacionamento',
         order: 2,
       },
       {
         id: '3',
-        name: 'Back Exit',
+        name: 'Saída dos Fundos',
         latitude: -3.7321,
         longitude: -38.5269,
-        description: 'Check rear exit',
+        description: 'Verifique a saída dos fundos',
         order: 3,
       },
     ];
@@ -196,9 +196,9 @@ const SecurityPatrolApp: React.FC = () => {
 
     if (distance <= CHECKPOINT_RADIUS) {
       Alert.alert(
-        'Checkpoint Reached',
-        `You are near ${currentCheckpoint.name}. Take a photo to complete this checkpoint.`,
-        [{ text: 'Take Photo', onPress: () => setCameraVisible(true) }]
+        'Parada alcançada',
+        `Você está perto de ${currentCheckpoint.name}. Tire uma foto para completar esta parada.`,
+        [{ text: 'Tirar Foto', onPress: () => setCameraVisible(true) }]
       );
     }
   };
@@ -225,15 +225,15 @@ const SecurityPatrolApp: React.FC = () => {
         name: newCheckpointName.trim(),
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
-        description: 'Checkpoint at current location',
+        description: 'Parada na localização atual',
         order: checkpoints.length + 1,
       };
       setCheckpoints([...checkpoints, newCheckpoint]);
       setNewCheckpointName('');
       setCheckpointModalVisible(false);
-      Alert.alert('Success', 'Checkpoint added at current location');
+      Alert.alert('Sucesso', 'Parada adicionada na localização atual');
     } else {
-      Alert.alert('Error', 'Please enter a name and ensure location is available');
+      Alert.alert('Erro', 'Por favor, insira um nome e garanta que a localização esteja disponível');
     }
   };
 
@@ -251,7 +251,7 @@ const SecurityPatrolApp: React.FC = () => {
         isActive: g.id === guard.id
       })));
 
-      Alert.alert('Patrol Started', `${guard.name} has started patrol`);
+      Alert.alert('Patrulha iniciada', `${guard.name} começou a patrulha`);
     } else {
       setPatrolStatus('inactive');
       setSelectedGuard(null);
@@ -261,7 +261,7 @@ const SecurityPatrolApp: React.FC = () => {
       // Update guard status
       setGuards(guards.map(g => ({ ...g, isActive: false })));
 
-      Alert.alert('Patrol Ended', 'Patrol has been stopped');
+      Alert.alert('Patrulha finalizada', 'Patrulha foi parada');
     }
   };
 
@@ -270,6 +270,7 @@ const SecurityPatrolApp: React.FC = () => {
     console.log(cameraRef.current);
     const photo = await cameraRef.current?.takePictureAsync();
     setUri(photo?.uri ?? null);
+    completeCheckpoint(photo?.uri ?? '');
     setCameraVisible(false);
   };
 
@@ -295,9 +296,9 @@ const SecurityPatrolApp: React.FC = () => {
 
     if (currentCheckpointIndex < checkpoints.length - 1) {
       setCurrentCheckpointIndex(currentCheckpointIndex + 1);
-      Alert.alert('Checkpoint Complete', 'Moving to next checkpoint');
+      Alert.alert('Parada completa', 'Movendo para a próxima parada');
     } else {
-      Alert.alert('Patrol Complete', 'All checkpoints have been visited!');
+      Alert.alert('Patrulha completa', 'Todas as paradas foram concluídas');
       setPatrolStatus('inactive');
       setSelectedGuard(null);
       setCurrentCheckpointIndex(0);
@@ -358,7 +359,7 @@ const SecurityPatrolApp: React.FC = () => {
           <Text style={styles.checkpointDescription}>{item.description}</Text>
           {distance !== null && (
             <Text style={styles.distanceText}>
-              Distance: {Math.round(distance)}m
+              Distância: {Math.round(distance)}m
             </Text>
           )}
           {/* Manual photo button for current checkpoint if not completed */}
@@ -368,7 +369,7 @@ const SecurityPatrolApp: React.FC = () => {
               onPress={handleManualPhoto}
             >
               <Ionicons name="camera" size={20} color="#fff" />
-              <Text style={styles.manualPhotoButtonText}>Take Photo Manually</Text>
+              <Text style={styles.manualPhotoButtonText}>Tirar Foto Manualmente</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -385,8 +386,8 @@ const SecurityPatrolApp: React.FC = () => {
     // Camera permissions are not granted yet.
     return (
       <View style={styles.container}>
-        <Text>We need your permission to show the camera</Text>
-        <Button onPress={requestPermission} title="grant permission" />
+        <Text>Precisamos de permissão para acessar a câmera</Text>
+        <Button onPress={requestPermission} title="conceder permissão" />
       </View>
     );
   }
@@ -397,7 +398,7 @@ const SecurityPatrolApp: React.FC = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Security Patrol</Text>
+        <Text style={styles.headerTitle}>Guardinha</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={styles.headerButton}
@@ -418,7 +419,7 @@ const SecurityPatrolApp: React.FC = () => {
       {selectedGuard && (
         <View style={styles.statusBar}>
           <Text style={styles.statusText}>
-            {selectedGuard.name} - Checkpoint {currentCheckpointIndex + 1} of {checkpoints.length}
+            {selectedGuard.name} - Checkpoint {currentCheckpointIndex + 1} de {checkpoints.length}
           </Text>
         </View>
       )}
@@ -426,7 +427,7 @@ const SecurityPatrolApp: React.FC = () => {
       <ScrollView style={styles.content}>
         {/* Guards Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Security Guards</Text>
+          <Text style={styles.sectionTitle}>Guardas</Text>
           <FlatList
             data={guards}
             renderItem={renderGuardItem}
@@ -437,7 +438,7 @@ const SecurityPatrolApp: React.FC = () => {
 
         {/* Checkpoints Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Patrol Route</Text>
+          <Text style={styles.sectionTitle}>Rota de Patrulha</Text>
           <FlatList
             data={checkpoints}
             renderItem={renderCheckpointItem}
@@ -449,7 +450,7 @@ const SecurityPatrolApp: React.FC = () => {
         {/* Patrol History */}
         {visitedCheckpoints.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Completed Checkpoints</Text>
+            <Text style={styles.sectionTitle}>Paradas completas</Text>
             {visitedCheckpoints.map((visit, index) => (
               <View key={index} style={styles.historyItem}>
                 <Text style={styles.historyTitle}>{visit.checkpointName}</Text>
@@ -486,10 +487,10 @@ const SecurityPatrolApp: React.FC = () => {
       <Modal visible={guardModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add New Guard</Text>
+            <Text style={styles.modalTitle}>Adicionar Novo Guarda</Text>
             <TextInput
               style={styles.textInput}
-              placeholder="Guard Name"
+              placeholder="Nome do Guarda"
               value={newGuardName}
               onChangeText={setNewGuardName}
             />
@@ -498,7 +499,7 @@ const SecurityPatrolApp: React.FC = () => {
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setGuardModalVisible(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.confirmButton]}
@@ -515,10 +516,10 @@ const SecurityPatrolApp: React.FC = () => {
       <Modal visible={checkpointModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Checkpoint at Current Location</Text>
+            <Text style={styles.modalTitle}>Adicionar parada para {currentLocation ? 'a localização atual' : 'uma nova localização'}</Text>
             <TextInput
               style={styles.textInput}
-              placeholder="Checkpoint Name"
+              placeholder="Nome da Parada"
               value={newCheckpointName}
               onChangeText={setNewCheckpointName}
             />
