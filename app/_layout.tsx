@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Camera, CameraCapturedPicture } from 'expo-camera';
+import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -59,7 +59,6 @@ type PatrolStatus = 'inactive' | 'active' | 'paused';
 const CHECKPOINT_RADIUS: number = 50; // meters
 
 const SecurityPatrolApp: React.FC = () => {
-  // State management
   const [guards, setGuards] = useState<Guard[]>([]);
   const [selectedGuard, setSelectedGuard] = useState<Guard | null>(null);
   const [currentLocation, setCurrentLocation] = useState<LocationCoords | null>(null);
@@ -69,10 +68,11 @@ const SecurityPatrolApp: React.FC = () => {
   const [currentCheckpointIndex, setCurrentCheckpointIndex] = useState<number>(0);
 
   // Camera states
+  const [facing, setFacing] = useState<CameraType>('front');
   const [cameraVisible, setCameraVisible] = useState<boolean>(false);
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
-  const cameraRef = useRef<Camera>(null);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [uri, setUri] = useState<string | null>(null);
+  const cameraRef = useRef<CameraView>(null);
 
   // Modal states
   const [guardModalVisible, setGuardModalVisible] = useState<boolean>(false);
@@ -90,10 +90,6 @@ const SecurityPatrolApp: React.FC = () => {
           Alert.alert('Permission denied', 'Location permission is required for this app');
           return;
         }
-
-        // Request camera permissions
-        const { status: cameraStatus } = await Camera.requestCameraPermissionsAsync();
-        setHasPermission(cameraStatus === 'granted');
 
         // Start location tracking
         const location = await Location.getCurrentPositionAsync({});
@@ -158,6 +154,10 @@ const SecurityPatrolApp: React.FC = () => {
     setGuards(sampleGuards);
     setCheckpoints(sampleCheckpoints.sort((a, b) => a.order - b.order));
   }, []);
+
+  const handleManualPhoto = () => {
+    setCameraVisible(true);
+  };
 
   // Calculate distance between two coordinates
   const calculateDistance = (
@@ -266,22 +266,11 @@ const SecurityPatrolApp: React.FC = () => {
   };
 
   // Take photo at checkpoint
-  const takePicture = async (): Promise<void> => {
-    if (cameraRef.current) {
-      try {
-        const photo: CameraCapturedPicture = await cameraRef.current.takePictureAsync({
-          quality: 0.7,
-          base64: false,
-        });
-
-        setCapturedPhoto(photo.uri);
-        setCameraVisible(false);
-        completeCheckpoint(photo.uri);
-      } catch (error) {
-        console.error('Error taking picture:', error);
-        Alert.alert('Error', 'Failed to take picture');
-      }
-    }
+  const takePicture = async () => {
+    console.log(cameraRef.current);
+    const photo = await cameraRef.current?.takePictureAsync();
+    setUri(photo?.uri ?? null);
+    setCameraVisible(false);
   };
 
   // Complete checkpoint visit
@@ -372,23 +361,32 @@ const SecurityPatrolApp: React.FC = () => {
               Distance: {Math.round(distance)}m
             </Text>
           )}
+          {/* Manual photo button for current checkpoint if not completed */}
+          {isCurrentCheckpoint && !isCompleted && (
+            <TouchableOpacity
+              style={styles.manualPhotoButton}
+              onPress={handleManualPhoto}
+            >
+              <Ionicons name="camera" size={20} color="#fff" />
+              <Text style={styles.manualPhotoButtonText}>Take Photo Manually</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </TouchableOpacity>
     );
   };
 
-  if (hasPermission === null) {
-    return (
-      <View style={styles.container}>
-        <Text>Requesting permissions...</Text>
-      </View>
-    );
+  if (!permission) {
+    // Camera permissions are still loading.
+    return <View />;
   }
 
-  if (hasPermission === false) {
+  if (!permission.granted) {
+    // Camera permissions are not granted yet.
     return (
       <View style={styles.container}>
-        <Text>No access to camera</Text>
+        <Text>We need your permission to show the camera</Text>
+        <Button onPress={requestPermission} title="grant permission" />
       </View>
     );
   }
@@ -469,7 +467,7 @@ const SecurityPatrolApp: React.FC = () => {
 
       {/* Camera Modal */}
       <Modal visible={cameraVisible} animationType="slide">
-        <Camera style={styles.camera} ref={cameraRef}>
+        <CameraView style={styles.camera} ref={cameraRef} facing={facing}>
           <View style={styles.cameraOverlay}>
             <TouchableOpacity
               style={styles.cameraButton}
@@ -481,7 +479,7 @@ const SecurityPatrolApp: React.FC = () => {
               <View style={styles.captureButtonInner} />
             </TouchableOpacity>
           </View>
-        </Camera>
+        </CameraView>
       </Modal>
 
       {/* Add Guard Modal */}
