@@ -66,6 +66,7 @@ const SecurityPatrolApp: React.FC = () => {
   const [patrolStatus, setPatrolStatus] = useState<PatrolStatus>('inactive');
   const [visitedCheckpoints, setVisitedCheckpoints] = useState<VisitedCheckpoint[]>([]);
   const [currentCheckpointIndex, setCurrentCheckpointIndex] = useState<number>(0);
+  const [distanceToCheckpoint, setDistanceToCheckpoint] = useState<number | null>(null);
 
   // Camera states
   const [facing, setFacing] = useState<CameraType>('front');
@@ -114,7 +115,7 @@ const SecurityPatrolApp: React.FC = () => {
     };
 
     setupPermissionsAndLocation();
-  }, []);
+  }, [distanceToCheckpoint, currentCheckpointIndex]);
 
   // Sample data initialization
   useEffect(() => {
@@ -194,6 +195,8 @@ const SecurityPatrolApp: React.FC = () => {
       currentCheckpoint.longitude
     );
 
+    setDistanceToCheckpoint(distance);
+
     if (distance <= CHECKPOINT_RADIUS) {
       Alert.alert(
         'Parada alcançada',
@@ -267,7 +270,6 @@ const SecurityPatrolApp: React.FC = () => {
 
   // Take photo at checkpoint
   const takePicture = async () => {
-    console.log(cameraRef.current);
     const photo = await cameraRef.current?.takePictureAsync();
     setUri(photo?.uri ?? null);
     completeCheckpoint(photo?.uri ?? '');
@@ -784,6 +786,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#fff',
     fontWeight: '600',
+  },
+  manualPhotoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fd5800',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  manualPhotoButtonText: {
+    textAlign: 'center',
+    color: '#fff',
+    marginLeft: 5,
+    fontSize: 14,
   },
 });
 
