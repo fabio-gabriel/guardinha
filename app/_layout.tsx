@@ -608,7 +608,7 @@ const SecurityPatrolApp: React.FC = () => {
               </TouchableOpacity>
             </View>
             <TouchableOpacity
-              style={[styles.modalButton, styles.cancelButton]}
+              style={[styles.modalButton, styles.cancelButtonMapModal]}
               onPress={() => setCheckpointModalVisible(false)}
             >
               <Text style={styles.cancelButtonText}>Cancelar</Text>
@@ -927,9 +927,10 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: '#ecf0f1',
-    marginHorizontal: 0,
-    height: 100,
-    marginTop: 10,
+  },
+  cancelButtonMapModal: {
+    backgroundColor: '#ecf0f1',
+    marginTop: 20,
   },
   confirmButton: {
     backgroundColor: '#3498db',
