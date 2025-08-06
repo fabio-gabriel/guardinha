@@ -20,13 +20,11 @@ export const calculateDistance = (
 };
 
 // Generate unique ID based on timestamp
-
 export const generateId = (): string => {
     return Date.now().toString();
 };
 
 // Format coordinates to a readable string
-
 export const formatCoordinates = (lat: number, lon: number): string => {
     return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
 };
