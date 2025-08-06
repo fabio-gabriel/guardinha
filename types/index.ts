@@ -48,14 +48,3 @@ export interface MapRegion {
     latitudeDelta: number;
     longitudeDelta: number;
 }
-
-export interface PatrolState {
-    guards: Guard[];
-    selectedGuard: Guard | null;
-    currentLocation: LocationCoords | null;
-    checkpoints: Checkpoint[];
-    patrolStatus: PatrolStatus;
-    visitedCheckpoints: VisitedCheckpoint[];
-    currentCheckpointIndex: number;
-    distanceToCheckpoint: number | null;
-}

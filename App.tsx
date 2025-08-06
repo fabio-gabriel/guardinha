@@ -1,7 +1,7 @@
 // App.tsx
 
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Dimensions,
     SafeAreaView,
@@ -46,6 +46,7 @@ const SecurityPatrolApp: React.FC = () => {
         addCheckpoint,
         togglePatrol,
         completeCheckpoint,
+        setTakePhotoCallback,
     } = usePatrol();
 
     // Modal states
@@ -118,6 +119,11 @@ const SecurityPatrolApp: React.FC = () => {
     const handlePhotoTaken = (photoUri: string) => {
         completeCheckpoint(photoUri);
     };
+
+    // Set up the camera callback for proximity alerts
+    useEffect(() => {
+        setTakePhotoCallback(() => setCameraVisible(true));
+    }, [setTakePhotoCallback]);
 
     return (
         <SafeAreaView style={styles.container}>

@@ -1,14 +1,28 @@
 // hooks/usePatrol.ts
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { CHECKPOINT_RADIUS, SAMPLE_CHECKPOINTS, SAMPLE_GUARDS } from '../constants';
 import { LocationService } from '../services/locationService';
 import { PatrolService } from '../services/patrolService';
 import {
-    Guard,
-    LocationCoords
+  Checkpoint,
+  Guard,
+  LocationCoords,
+  PatrolStatus,
+  VisitedCheckpoint,
 } from '../types';
+
+interface PatrolState {
+  guards: Guard[];
+  selectedGuard: Guard | null;
+  currentLocation: LocationCoords | null;
+  checkpoints: Checkpoint[];
+  patrolStatus: PatrolStatus;
+  visitedCheckpoints: VisitedCheckpoint[];
+  currentCheckpointIndex: number;
+  distanceToCheckpoint: number | null;
+}
 
 export const usePatrol = () => {
   const [state, setState] = useState<PatrolState>({
@@ -23,6 +37,8 @@ export const usePatrol = () => {
   });
 
   const locationService = LocationService.getInstance();
+  const proximityAlertShownRef = useRef(false);
+  const onTakePhotoRef = useRef<(() => void) | null>(null);
 
   // Initialize app with sample data
   useEffect(() => {
@@ -45,8 +61,16 @@ export const usePatrol = () => {
       }
 
       locationService.startLocationTracking((location) => {
-        setState(prev => ({ ...prev, currentLocation: location }));
-        checkProximityToCheckpoint(location);
+        setState(prev => {
+          const newState = { ...prev, currentLocation: location };
+
+          // Check proximity immediately with updated state
+          if (newState.patrolStatus === 'active' && location) {
+            checkProximityToCheckpoint(location, newState);
+          }
+
+          return newState;
+        });
       });
     };
 
@@ -57,21 +81,35 @@ export const usePatrol = () => {
     };
   }, []);
 
-  const checkProximityToCheckpoint = useCallback((coords: LocationCoords) => {
-    if (state.patrolStatus !== 'active' || !coords) return;
+  const checkProximityToCheckpoint = useCallback((coords: LocationCoords, currentState: PatrolState) => {
+    if (currentState.patrolStatus !== 'active' || !coords) return;
 
-    const currentCheckpoint = state.checkpoints[state.currentCheckpointIndex];
+    const currentCheckpoint = currentState.checkpoints[currentState.currentCheckpointIndex];
     if (!currentCheckpoint) return;
 
+    const isCompleted = currentState.visitedCheckpoints.some(v => v.checkpointId === currentCheckpoint.id);
+    if (isCompleted) return;
+
     const distance = PatrolService.checkProximityToCheckpoint(coords, currentCheckpoint);
+
     setState(prev => ({ ...prev, distanceToCheckpoint: distance }));
 
-    if (distance <= CHECKPOINT_RADIUS) {
+    if (distance <= CHECKPOINT_RADIUS && !proximityAlertShownRef.current) {
+      proximityAlertShownRef.current = true;
       PatrolService.showProximityAlert(currentCheckpoint.name, () => {
-        // This will be handled by the camera modal
+        if (onTakePhotoRef.current) {
+          onTakePhotoRef.current();
+        }
       });
+    } else if (distance > CHECKPOINT_RADIUS) {
+      proximityAlertShownRef.current = false;
     }
-  }, [state.patrolStatus, state.currentCheckpointIndex, state.checkpoints]);
+  }, []);
+
+  // Reset proximity alert when checkpoint changes
+  useEffect(() => {
+    proximityAlertShownRef.current = false;
+  }, [state.currentCheckpointIndex]);
 
   const addGuard = useCallback((name: string) => {
     if (!name.trim()) return;
@@ -116,6 +154,7 @@ export const usePatrol = () => {
         visitedCheckpoints: [],
         guards: PatrolService.updateGuardStatus(prev.guards, guard.id, true),
       }));
+      proximityAlertShownRef.current = false;
       PatrolService.showPatrolStartAlert(guard.name);
     } else {
       setState(prev => ({
@@ -126,6 +165,7 @@ export const usePatrol = () => {
         visitedCheckpoints: [],
         guards: PatrolService.updateGuardStatus(prev.guards, '', false),
       }));
+      proximityAlertShownRef.current = false;
       PatrolService.showPatrolEndAlert();
     }
   }, [state.patrolStatus]);
@@ -143,7 +183,7 @@ export const usePatrol = () => {
 
     setState(prev => {
       const newVisitedCheckpoints = [...prev.visitedCheckpoints, visitData];
-      
+
       if (prev.currentCheckpointIndex < prev.checkpoints.length - 1) {
         PatrolService.showCheckpointCompleteAlert();
         return {
@@ -163,7 +203,14 @@ export const usePatrol = () => {
         };
       }
     });
+
+    // Reset proximity alert for next checkpoint
+    proximityAlertShownRef.current = false;
   }, [state.selectedGuard, state.currentLocation, state.checkpoints, state.currentCheckpointIndex]);
+
+  const setTakePhotoCallback = useCallback((callback: () => void) => {
+    onTakePhotoRef.current = callback;
+  }, []);
 
   return {
     ...state,
@@ -171,5 +218,6 @@ export const usePatrol = () => {
     addCheckpoint,
     togglePatrol,
     completeCheckpoint,
+    setTakePhotoCallback,
   };
 };
