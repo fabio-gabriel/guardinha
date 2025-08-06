@@ -1,8 +1,4 @@
-// utils/index.ts
-
-/**
- * Calculate distance between two coordinates using Haversine formula
- */
+// Calculate distance between two coordinates using Haversine formula
 export const calculateDistance = (
     lat1: number,
     lon1: number,
@@ -23,16 +19,14 @@ export const calculateDistance = (
     return R * c; // Distance in meters
 };
 
-/**
- * Generate unique ID based on timestamp
- */
+// Generate unique ID based on timestamp
+
 export const generateId = (): string => {
     return Date.now().toString();
 };
 
-/**
- * Format coordinates to a readable string
- */
+// Format coordinates to a readable string
+
 export const formatCoordinates = (lat: number, lon: number): string => {
     return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
 };
